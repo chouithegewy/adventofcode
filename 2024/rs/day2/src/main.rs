@@ -19,7 +19,23 @@ fn main() {
             safe_count += 1;
             println!("{}: {}: {}", li, l, safe_count);
         } else {
-            println!("{}: {}: {}", li, l, "unsafe");
+            for i in 0..r.data.len() {
+                print!("{i}");
+                let (data_minus_one_level1, data_minus_one_level2) = r.data.split_at(i).clone();
+                let mut data_minus_one_level = data_minus_one_level1.to_vec();
+                let mut data_minus_one_level2 = data_minus_one_level2.to_vec();
+                data_minus_one_level2.remove(0);
+                data_minus_one_level.extend(data_minus_one_level2);
+                print!("{data_minus_one_level:?}");
+                let new_report = Report::new(data_minus_one_level);
+                if new_report.strictly_increasing() || new_report.strictly_decreasing() {
+                    safe_count += 1;
+                    println!();
+                    println!("{}: {}: {}", li, l, safe_count);
+                    break;
+                }
+                println!();
+            }
         }
     }
 }
@@ -48,6 +64,7 @@ impl Report {
             .len()
             >= &(self.data.len() - 1)
     }
+
     fn strictly_decreasing(&self) -> bool {
         &self
             .data
