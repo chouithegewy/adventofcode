@@ -1,41 +1,75 @@
+use std::collections::BTreeMap;
 use std::fs;
+
 fn main() {
     let path = "input.txt";
     let data = fs::read_to_string(path).unwrap();
     let lines: Vec<&str> = data.lines().collect();
     let mut safe_count = 0;
     let mut line_count = 0;
-    'reports: for (li, l) in lines.iter().enumerate() {
+
+    for (li, l) in lines.iter().enumerate() {
         let report = l
             .split(r" ")
             .map(|c| c.parse::<i32>().unwrap())
             .collect::<Vec<_>>();
-        let mut lastlevel = 0;
-        let mut increasing: bool = false;
-        'lvl: for (i, level) in report.iter().enumerate() {
-            if i == 0 {
-                lastlevel = *level;
-            } else {
-                let diff = *level - lastlevel;
-                let positive = if diff > 0 { true } else { false };
-                let diff_abs = if !positive { diff * -1 } else { diff };
-                if diff_abs > 3 || (diff_abs < 1) {
-                    continue 'reports;
-                }
-                let currently_increasing = if positive { true } else { false };
-                if i == 1 {
-                    increasing = currently_increasing;
-                } else if increasing != currently_increasing {
-                    continue 'reports;
-                }
-                lastlevel = *level;
-            }
+
+        let r = Report::new(report);
+
+        if r.strictly_increasing() || r.strictly_decreasing() {
+            safe_count += 1;
+            println!("{}: {}: {}", li, l, safe_count);
+        } else {
+            println!("{}: {}: {}", li, l, "unsafe");
         }
-        safe_count += 1;
-        if line_count >= 0 {
-            println!("{}: {}; safe_count = {}", li + 1, l, safe_count);
-        }
-        line_count += 1;
     }
-    println!("{}", safe_count);
+}
+
+struct Report {
+    data: Vec<i32>,
+}
+
+impl Report {
+    fn new(_data: Vec<i32>) -> Self {
+        Report { data: _data }
+    }
+
+    fn strictly_increasing(&self) -> bool {
+        &self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(a, b)| {
+                (*a < self.data.len() - 1)
+                    && (b < &&self.data[*a + 1])
+                    && (b.abs_diff(self.data[*a + 1]) <= 3)
+                    && (b.abs_diff(self.data[*a + 1]) >= 1)
+            })
+            .collect::<Vec<_>>()
+            .len()
+            >= &(self.data.len() - 1)
+    }
+    fn strictly_decreasing(&self) -> bool {
+        &self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(a, b)| {
+                (*a < self.data.len() - 1)
+                    && (b > &&self.data[*a + 1])
+                    && (b.abs_diff(self.data[*a + 1]) <= 3)
+                    && (b.abs_diff(self.data[*a + 1]) >= 1)
+            })
+            .collect::<Vec<_>>()
+            .len()
+            >= &(self.data.len() - 1)
+    }
+}
+
+fn difference(level: i32, lastlevel: i32) -> i32 {
+    level - lastlevel
+}
+
+fn is_diff_ok(diff: i32) -> bool {
+    diff <= 3 || diff >= 1
 }
